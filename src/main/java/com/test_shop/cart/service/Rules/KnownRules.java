@@ -5,7 +5,7 @@ public sealed interface KnownRules permits DiscountRule, PromoRule, CardIssuerRu
         if (flatRate > 1.0) {
             throw new IllegalArgumentException("Descuento invalido, se intento aumentar el precio");
         }
-        return flatRate;
+        return 1.0 - flatRate;
     };
     default public Double CalculateDiscout(int quantityThreshold, int discountMagnitude, int quantity, int discountAppliesThisManyTimes) {return 1.0;}
 }
