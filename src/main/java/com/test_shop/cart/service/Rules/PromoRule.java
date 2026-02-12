@@ -22,7 +22,7 @@ public final class PromoRule implements KnownRules {
                 itemsBeingPaidFor = discountMagnitude * (quantity / quantityThreshold);
             }
         }
-        Double discount = (double) itemsBeingPaidFor / quantity;
+        double discount = (double) itemsBeingPaidFor / quantity;
 
         return discount;
     }

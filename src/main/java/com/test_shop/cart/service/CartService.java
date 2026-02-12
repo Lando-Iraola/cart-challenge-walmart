@@ -12,22 +12,22 @@ public class CartService {
     private ArrayList<CartItemService> productos;
     private ArrayList<RulesService> descuentos;
     private MoneyService total;
-    private double impuesto;
+    private String impuesto;
     private PaymentProcessorService paymentProcessorService;
 
-    public CartService(ArrayList<CartItemService> productos, ArrayList<RulesService> descuentos, double impuesto) {
+    public CartService(ArrayList<CartItemService> productos, ArrayList<RulesService> descuentos, String impuesto) {
         this.productos = productos;
         this.descuentos = descuentos;
         this.impuesto = impuesto;
     }
 
-    public CartService(ArrayList<CartItemService> productos, double impuesto) {
+    public CartService(ArrayList<CartItemService> productos, String impuesto) {
         this.productos = productos;
         this.impuesto = impuesto;
     }
 
     public String CalcularTotal() {
-        this.total = new MoneyService(new BigDecimal(0), impuesto);
+        this.total = new MoneyService(new BigDecimal(0), new BigDecimal(impuesto));
         if (descuentos == null) {
             for (CartItemService producto : productos) {
                 BigDecimal price = new BigDecimal(producto.getProduct().getPriceAsString());
@@ -41,10 +41,10 @@ public class CartService {
         for (CartItemService producto : productos) {
             double activeDiscount = 0;
             for (RulesService descuento : descuentos) {
-               activeDiscount = ruleDiscount(descuento, producto, activeDiscount);
+                activeDiscount = ruleDiscount(descuento, producto, activeDiscount);
             }
 
-            if(activeDiscount == 0){
+            if (activeDiscount == 0) {
                 BigDecimal price = new BigDecimal(producto.getProduct().getPriceAsString());
                 price = price.multiply(new BigDecimal(producto.getQuantity()));
                 this.total.add(price.toPlainString());
@@ -60,7 +60,7 @@ public class CartService {
         return this.total.getValueWithTax();
     }
 
-    private double ruleDiscount(RulesService descuento, CartItemService producto, double activeDiscount){
+    private double ruleDiscount(RulesService descuento, CartItemService producto, double activeDiscount) {
         KnownRules rule = descuento.getRule();
         boolean isProductTarget = descuento.isInTargetList(producto.getProduct());
         if (isProductTarget) {
@@ -72,7 +72,9 @@ public class CartService {
                 default -> 0.0;
             };
 
-            if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
+            if (!descuento.getStackWithOtherRules() && activeDiscount == 0.0) {
+                activeDiscount += discount;
+            } else if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
                 activeDiscount += discount;
             }
         }
@@ -87,7 +89,9 @@ public class CartService {
                 default -> 0.0;
             };
 
-            if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
+            if (!descuento.getStackWithOtherRules() && activeDiscount == 0.0) {
+                activeDiscount += discount;
+            } else if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
                 activeDiscount += discount;
             }
 
@@ -98,7 +102,9 @@ public class CartService {
                 case CardIssuerRule c -> c.CalculateDiscout(descuento.getFlatRateDiscount());
                 default -> 0.0;
             };
-            if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
+            if (!descuento.getStackWithOtherRules() && activeDiscount == 0.0) {
+                activeDiscount += discount;
+            } else if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
                 activeDiscount += discount;
             }
         }

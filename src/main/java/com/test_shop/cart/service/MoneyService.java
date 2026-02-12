@@ -1,14 +1,15 @@
 package com.test_shop.cart.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class MoneyService {
     private BigDecimal value;
-    private double tax;
+    private BigDecimal tax;
 
-    public MoneyService(BigDecimal value, double tax){
+    public MoneyService(BigDecimal value, BigDecimal tax){
         this.value = value;
-        this.tax = 1+tax;
+        this.tax = tax.add(new BigDecimal(1));
     }
 
     public MoneyService(BigDecimal value){
@@ -20,7 +21,7 @@ public class MoneyService {
     }
 
     public String getValueWithTax(){
-        return this.value.multiply(new BigDecimal(tax)).toPlainString();
+        return this.value.multiply(tax).setScale(0, RoundingMode.HALF_UP).toPlainString();
     }
 
     public BigDecimal add(String value){
