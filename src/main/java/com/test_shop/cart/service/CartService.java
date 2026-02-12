@@ -63,45 +63,18 @@ public class CartService {
     private double ruleDiscount(RulesService descuento, CartItemService producto, double activeDiscount) {
         KnownRules rule = descuento.getRule();
         boolean isProductTarget = descuento.isInTargetList(producto.getProduct());
-        if (isProductTarget) {
-            double discount = switch (rule) {
-                case DiscountRule d -> d.CalculateDiscout(descuento.getFlatRateDiscount());
-                case PromoRule p -> p.CalculateDiscout(descuento.getQuantityThreshold(),
-                        descuento.getDiscountMagnitude(), producto.getQuantity(),
-                        descuento.getMaxApplicability());
-                default -> 0.0;
-            };
-
-            if (!descuento.getStackWithOtherRules() && activeDiscount == 0.0) {
-                activeDiscount += discount;
-            } else if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
-                activeDiscount += discount;
-            }
-        }
-
         boolean isBrandTarget = descuento.isInTargetList(producto.getProduct().getBrand());
-        if (isBrandTarget) {
+        boolean isPaymentTarget = descuento.isInTargetList(paymentProcessorService);
+        if (isProductTarget || isBrandTarget || isPaymentTarget) {
             double discount = switch (rule) {
                 case DiscountRule d -> d.CalculateDiscout(descuento.getFlatRateDiscount());
                 case PromoRule p -> p.CalculateDiscout(descuento.getQuantityThreshold(),
                         descuento.getDiscountMagnitude(), producto.getQuantity(),
                         descuento.getMaxApplicability());
-                default -> 0.0;
-            };
-
-            if (!descuento.getStackWithOtherRules() && activeDiscount == 0.0) {
-                activeDiscount += discount;
-            } else if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
-                activeDiscount += discount;
-            }
-
-        }
-        boolean isPaymentTarget = descuento.isInTargetList(paymentProcessorService);
-        if (isPaymentTarget) {
-            double discount = switch (rule) {
                 case CardIssuerRule c -> c.CalculateDiscout(descuento.getFlatRateDiscount());
                 default -> 0.0;
             };
+
             if (!descuento.getStackWithOtherRules() && activeDiscount == 0.0) {
                 activeDiscount += discount;
             } else if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
