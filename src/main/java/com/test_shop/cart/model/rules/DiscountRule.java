@@ -13,7 +13,7 @@ public final class DiscountRule extends RuleEntity {
     private BigDecimal flatRateDiscount;
 
     // Standard constructor for JPA
-    protected DiscountRule() {
+    public DiscountRule() {
         super();
     }
 

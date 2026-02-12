@@ -24,7 +24,7 @@ public class Cart {
     private List<CartItem> items = new ArrayList<>();
 
     // Standard constructor for JPA
-    protected Cart() {
+    public Cart() {
     }
 
     // Constructor for manual setup
@@ -44,6 +44,10 @@ public class Cart {
     }
 
     // --- Manual Getters and Setters ---
+
+    public void setItems(List<CartItem> item){
+        this.items = item;
+    }
 
     public UUID getId() {
         return id;

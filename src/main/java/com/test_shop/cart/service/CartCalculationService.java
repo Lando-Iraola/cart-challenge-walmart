@@ -32,7 +32,7 @@ public class CartCalculationService {
             double activeDiscountMultiplier = calculateItemDiscount(item, eligibleRules);
 
             // FIX: Wrap the String value in a new BigDecimal constructor
-            BigDecimal itemBasePrice = new BigDecimal(item.getProduct().getPrice().getValue());
+            BigDecimal itemBasePrice = item.getProduct().getPrice().getValue();
 
             BigDecimal lineTotal = itemBasePrice
                     .multiply(new BigDecimal(item.getQuantity()))

@@ -16,7 +16,7 @@ public class PaymentProcessor {
     private String name;
 
     // Standard constructor for JPA
-    protected PaymentProcessor() {
+    public PaymentProcessor() {
     }
 
     // Constructor for manual setup

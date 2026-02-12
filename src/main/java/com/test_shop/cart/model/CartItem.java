@@ -26,7 +26,7 @@ public class CartItem {
     private int quantity = 1;
 
     // JPA mandatory no-args constructor
-    protected CartItem() {
+    public CartItem() {
     }
 
     public CartItem(Cart cart, Product product, int quantity) {
@@ -40,6 +40,14 @@ public class CartItem {
     public int addQuantity(int extraQuantity) {
         this.quantity += extraQuantity;
         return this.quantity;
+    }
+
+    public void setProduct(Product product){
+        this.product = product;
+    }
+
+    public void setQuantity(int quantity){
+        this.quantity = quantity;
     }
 
     // Getters

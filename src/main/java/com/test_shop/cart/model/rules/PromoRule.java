@@ -12,7 +12,7 @@ public final class PromoRule extends RuleEntity {
     private int maxApplicability;
 
     // Standard constructor for JPA
-    protected PromoRule() {
+    public PromoRule() {
         super();
     }
 

@@ -5,7 +5,15 @@ import java.util.UUID;
 import java.util.Objects;
 
 @Entity
-@Table(name = "productos")
+@Table(
+    name = "productos",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_product_name_brand", 
+            columnNames = {"name", "brand_id"}
+        )
+    }
+)
 public class Product {
 
     @Id
@@ -19,11 +27,12 @@ public class Product {
     @JoinColumn(name = "brand_id")
     private Brand brand;
 
+    // Inside Product.java
     @Embedded
-    private Money price;
+    private Money price = new Money();
 
     // Standard constructor for JPA
-    protected Product() {
+    public Product() {
     }
 
     // Constructor for manual setup

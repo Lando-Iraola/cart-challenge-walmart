@@ -14,7 +14,7 @@ public class Money {
     @Column(name = "price_tax", precision = 19, scale = 4)
     private BigDecimal tax;
 
-    protected Money() {
+    public Money() {
     }
 
     public Money(BigDecimal value, BigDecimal tax) {
@@ -26,8 +26,14 @@ public class Money {
         this.value = value;
     }
 
-    public String getValue() {
-        return this.value != null ? this.value.toPlainString() : "0.00";
+    // FIX: Return the BigDecimal directly
+    public BigDecimal getValue() {
+        return value;
+    }
+
+    // FIX: Accept the BigDecimal directly
+    public void setValue(BigDecimal value) {
+        this.value = value;
     }
 
     public String getValueWithTax() {

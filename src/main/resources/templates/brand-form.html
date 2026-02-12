@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Brand Management</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="container mt-5">
+
+    <div class="row">
+        <div class="col-md-4">
+            <h3>Add New Brand</h3>
+            <div th:if="${param.success}" class="alert alert-success">Brand saved!</div>
+            
+            <form th:action="@{/brands/save}" th:object="${brand}" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Brand Name</label>
+                    <input type="text" th:field="*{name}" class="form-control" placeholder="e.g. Colun" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Save Brand</button>
+            </form>
+            
+            <div class="mt-4">
+                <a href="/products/new" class="btn btn-outline-primary w-100">Go to Products</a>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <h3>Existing Brands</h3>
+            <table class="table table-striped table-hover mt-3">
+                <thead class="table-dark">
+                    <tr>
+                        <th>UUID</th>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="b : ${brands}">
+                        <td th:text="${b.id}" class="small text-muted"></td>
+                        <td th:text="${b.name}" class="fw-bold"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(brands)}">
+                        <td colspan="2" class="text-center text-muted">No brands found in database.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

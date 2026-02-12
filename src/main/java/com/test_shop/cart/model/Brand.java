@@ -15,7 +15,7 @@ public class Brand {
     @Column(nullable = false, unique = true)
     private String name;
 
-    protected Brand() {
+    public Brand() {
     }
 
     public Brand(String name) {
