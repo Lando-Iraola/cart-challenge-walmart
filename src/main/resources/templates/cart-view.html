@@ -1,53 +1,103 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Checkout Simulator</title>
+    <title>Checkout Simulator | Test Shop</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .simulator-card { border: none; border-radius: 15px; }
+        .result-card { border: none; border-radius: 15px; border-left: 6px solid #198754; }
+        .section-title { font-weight: 800; color: #0f172a; }
+    </style>
 </head>
-<body class="container mt-5">
-    <h2 class="mb-4">🛒 Cart Checkout Simulator</h2>
+<body class="container py-5">
 
-    <div class="row">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h2 class="section-title mb-0">🛒 Checkout Simulator</h2>
+        <a th:href="@{/admin}" class="btn btn-outline-dark px-4 rounded-pill fw-bold">⚙️ Admin Dashboard</a>
+    </div>
+
+    <div class="row g-4">
         <div class="col-md-5">
-            <form th:action="@{/cart/calculate}" th:object="${cartRequest}" method="post" class="card p-4 shadow-sm">
-                <div class="mb-3">
-                    <label class="form-label">Select Product</label>
-                    <select th:field="*{productId}" class="form-select" required>
-                        <option value="">-- Choose a Product --</option>
-                        <option th:each="p : ${products}" th:value="${p.id}" 
-                                th:text="${p.name} + ' (' + ${p.brand.name} + ') - $' + ${p.price.value}"></option>
-                    </select>
-                </div>
+            <div class="card simulator-card shadow-sm p-4">
+                <h5 class="fw-bold mb-4">Cart Details</h5>
+                <form th:action="@{/cart/calculate}" th:object="${cartRequest}" method="post">
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Select Product</label>
+                        <select th:field="*{productId}" class="form-select bg-light border-0" required>
+                            <option value="">-- Choose a Product --</option>
+                            <option th:each="p : ${products}" th:value="${p.id}" 
+                                    th:text="${p.name} + ' (' + ${p.brand.name} + ') - $' + ${p.price.value}"></option>
+                        </select>
+                    </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Payment Method</label>
-                    <select th:field="*{processorId}" class="form-select" required>
-                        <option value="">-- Choose Payment --</option>
-                        <option th:each="proc : ${processors}" th:value="${proc.id}" th:text="${proc.name}"></option>
-                    </select>
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Quantity</label>
+                        <input type="number" th:field="*{quantity}" class="form-control bg-light border-0" min="1" required>
+                        <small class="text-muted">Test "Buy 3, Pay 2" or other bulk rules here.</small>
+                    </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100">Calculate Final Price</button>
-            </form>
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Payment Method</label>
+                        <select th:field="*{processorId}" class="form-select bg-light border-0" required>
+                            <option value="">-- Choose Payment --</option>
+                            <option th:each="proc : ${processors}" th:value="${proc.id}" th:text="${proc.name}"></option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">Calculate Final Price</button>
+                </form>
+            </div>
         </div>
 
         <div class="col-md-7">
-            <div th:if="${finalPrice != null}" class="card border-success shadow-lg">
-                <div class="card-header bg-success text-white">Calculation Result</div>
-                <div class="card-body">
-                    <h5 class="card-title" th:text="'Product: ' + ${selectedProduct.name}"></h5>
-                    <p class="text-muted" th:text="'Brand: ' + ${selectedProduct.brand.name}"></p>
-                    <p class="mb-1">Base Price: <span th:text="'$' + ${selectedProduct.price.value}"></span></p>
-                    <p class="mb-1">Payment Method: <span th:text="${selectedProcessor.name}" class="badge bg-info text-dark"></span></p>
-                    <hr>
-                    <h3 class="text-success">Total to Pay: <span th:text="'$' + ${finalPrice}"></span></h3>
+            
+            <div th:if="${finalPrice != null}" class="card result-card shadow-lg">
+                <div class="card-header bg-success text-white fw-bold py-3">Calculation Successful</div>
+                <div class="card-body p-4">
+                    <div class="row mb-3">
+                        <div class="col-8">
+                            <h3 class="fw-bold mb-0" th:text="${selectedProduct.name}"></h3>
+                            <p class="text-muted mb-0" th:text="'Brand: ' + ${selectedProduct.brand.name}"></p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <span class="badge bg-dark px-3 py-2" th:text="${selectedQuantity} + ' Units'"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-light p-3 rounded-3 mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Unit Base Price:</span>
+                            <span class="fw-bold" th:text="'$' + ${selectedProduct.price.value}"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-0">
+                            <span class="text-muted">Payment via:</span>
+                            <span class="fw-bold" th:text="${selectedProcessor.name}"></span>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p class="text-muted small mb-1 text-uppercase fw-bold">Final Amount to Pay (Inc. Tax & Rules)</p>
+                        <h1 class="display-4 fw-black text-success" th:text="'$' + ${finalPrice}"></h1>
+                    </div>
                 </div>
             </div>
-            
-            <div th:unless="${finalPrice != null}" class="alert alert-info">
-                Select a product and payment method to see the discounts in action.
+
+            <div th:unless="${finalPrice != null}" class="h-100 d-flex align-items-center justify-content-center border rounded-4 bg-white p-5 text-center text-muted shadow-sm">
+                <div>
+                    <div class="display-1 mb-3">📋</div>
+                    <h4 class="fw-bold text-dark">Awaiting Input</h4>
+                    <p>Configure the cart and click calculate to see the <br> Rule Engine in action.</p>
+                </div>
             </div>
+
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

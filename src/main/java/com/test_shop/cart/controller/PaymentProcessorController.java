@@ -7,7 +7,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/processors")
+@RequestMapping("/admin/processors")
 public class PaymentProcessorController {
 
     private final PaymentProcessorRepository processorRepository;
@@ -20,12 +20,12 @@ public class PaymentProcessorController {
     public String showForm(Model model) {
         model.addAttribute("processor", new PaymentProcessor());
         model.addAttribute("processors", processorRepository.findAll());
-        return "processor-form";
+        return "admin/processor-form";
     }
 
     @PostMapping("/save")
     public String save(@ModelAttribute("processor") PaymentProcessor processor) {
         processorRepository.save(processor);
-        return "redirect:/processors/new?success";
+        return "redirect:/admin/processors/new?success";
     }
 }

@@ -7,7 +7,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/brands")
+@RequestMapping("/admin/brands")
 public class BrandController {
 
     private final BrandRepository brandRepository;
@@ -21,13 +21,13 @@ public class BrandController {
     public String showBrandForm(Model model) {
         model.addAttribute("brand", new Brand()); // For the form binding
         model.addAttribute("brands", brandRepository.findAll()); // To show existing brands below the form
-        return "brand-form";
+        return "admin/brand-form";
     }
 
     // 2. Save the new brand
     @PostMapping("/save")
     public String saveBrand(@ModelAttribute("brand") Brand brand) {
         brandRepository.save(brand);
-        return "redirect:/brands/new?success";
+        return "redirect:/admin/brands/new?success";
     }
 }

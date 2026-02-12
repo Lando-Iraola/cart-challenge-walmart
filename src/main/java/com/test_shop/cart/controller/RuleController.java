@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Controller
-@RequestMapping("/rules")
+@RequestMapping("/admin/rules")
 public class RuleController {
 
     private final RuleRepository ruleRepository;
@@ -42,7 +42,7 @@ public class RuleController {
         model.addAttribute("brands", brandRepository.findAll());
         model.addAttribute("processors", processorRepository.findAll());
         model.addAttribute("rules", ruleRepository.findAll());
-        return "rule-form";
+        return "admin/rule-form"; // Corrected path
     }
 
     @PostMapping("/save")
@@ -95,12 +95,12 @@ public class RuleController {
         }
 
         ruleRepository.save(rule);
-        return "redirect:/rules/new?success";
+        return "redirect:/admin/rules/new?success";
     }
 
     @PostMapping("/delete/{id}")
     public String deleteRule(@PathVariable UUID id) {
         ruleRepository.deleteById(id);
-        return "redirect:/rules/new";
+        return "redirect:/admin/rules/new";
     }
 }

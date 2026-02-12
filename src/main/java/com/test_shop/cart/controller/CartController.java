@@ -41,29 +41,26 @@ public class CartController {
 
     @PostMapping("/calculate")
     public String calculateTotal(@ModelAttribute CartRequest cartRequest, Model model) {
-        // 1. Fetch the real entities from DB
         Product product = productRepository.findById(cartRequest.getProductId()).orElseThrow();
         PaymentProcessor processor = processorRepository.findById(cartRequest.getProcessorId()).orElseThrow();
 
-        // 2. Create a temporary Cart and CartItem to satisfy your Service logic
         Cart tempCart = new Cart();
         tempCart.setPaymentProcessor(processor);
-        tempCart.setTaxRate("0.19"); // Example tax rate (19%)
+        tempCart.setTaxRate("0.19");
 
         CartItem item = new CartItem();
         item.setProduct(product);
-        item.setQuantity(1); // For now, we assume 1 item
+        // FIX: Use the quantity from the request!
+        item.setQuantity(cartRequest.getQuantity());
         tempCart.setItems(List.of(item));
 
-        // 3. Call your specific method name: 'calcularTotal'
-        // Note: your service returns a String (total.getValueWithTax())
         String finalPriceDisplay = calculationService.calcularTotal(tempCart);
 
-        // 4. Pass everything to the view
         model.addAttribute("products", productRepository.findAll());
         model.addAttribute("processors", processorRepository.findAll());
         model.addAttribute("selectedProduct", product);
         model.addAttribute("selectedProcessor", processor);
+        model.addAttribute("selectedQuantity", cartRequest.getQuantity()); // Added for display
         model.addAttribute("finalPrice", finalPriceDisplay);
 
         return "cart-view";
