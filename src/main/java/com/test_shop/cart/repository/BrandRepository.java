@@ -23,4 +23,5 @@ public interface BrandRepository extends JpaRepository<Brand, UUID> {
      * SELECT * FROM brands WHERE name = ?
      */
     Optional<Brand> findByName(String name);
+    boolean existsByName(String name);
 }

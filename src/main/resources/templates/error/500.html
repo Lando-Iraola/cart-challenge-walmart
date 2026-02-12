@@ -1,0 +1,14 @@
+<body class="container py-5">
+    <div class="card border-danger p-5 text-center shadow">
+        <h1 class="text-danger fw-bold">500</h1>
+        <h3>Logic Breakdown</h3>
+        <p>Something went wrong while calculating the rules. Our engineers have been notified.</p>
+        
+        <div class="mt-4 p-3 bg-light rounded text-start">
+            <p class="small text-danger mb-0"><strong>Error Detail:</strong></p>
+            <code class="small" th:text="${message}">Error description here</code>
+        </div>
+        
+        <a href="/" class="btn btn-outline-danger mt-4">Reset Simulator</a>
+    </div>
+</body>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>404 - Page Not Found</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; height: 100vh; display: flex; align-items: center; }
+        .error-card { border: none; border-radius: 20px; padding: 3rem; }
+    </style>
+</head>
+<body class="container">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-6 text-center">
+            <div class="card error-card shadow-lg">
+                <h1 class="display-1 fw-bold text-primary">404</h1>
+                <h3 class="fw-bold">Lost in the Engine?</h3>
+                <p class="text-muted">The route you are looking for doesn't exist in our rule engine mappings.</p>
+                <div class="mt-4">
+                    <a href="/" class="btn btn-primary px-5 py-2 rounded-pill">Return to Simulator</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

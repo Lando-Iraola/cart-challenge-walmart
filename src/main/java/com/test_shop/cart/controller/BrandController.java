@@ -5,6 +5,7 @@ import com.test_shop.cart.repository.BrandRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin/brands")
@@ -26,7 +27,14 @@ public class BrandController {
 
     // 2. Save the new brand
     @PostMapping("/save")
-    public String saveBrand(@ModelAttribute("brand") Brand brand) {
+    public String saveBrand(@ModelAttribute("brand") Brand brand, RedirectAttributes redirectAttributes) {
+        // Check if name already exists
+        if (brandRepository.existsByName(brand.getName())) {
+            // Use flash attributes to pass a message through the redirect
+            redirectAttributes.addFlashAttribute("error", "The brand '" + brand.getName() + "' already exists!");
+            return "redirect:/admin/brands/new";
+        }
+
         brandRepository.save(brand);
         return "redirect:/admin/brands/new?success";
     }
