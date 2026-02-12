@@ -16,7 +16,8 @@ public class PaymentProcessor {
     private String name;
 
     // Standard constructor for JPA
-    protected PaymentProcessor() {}
+    protected PaymentProcessor() {
+    }
 
     // Constructor for manual setup
     public PaymentProcessor(String name) {
@@ -45,14 +46,17 @@ public class PaymentProcessor {
     // Critical for RuleEntity.isEligible(product, processor)
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PaymentProcessor that = (PaymentProcessor) o;
+        if (this == o)
+            return true;
+        if (!(o instanceof PaymentProcessor that))
+            return false;
+        if (id == null || that.id == null)
+            return false;
         return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hashCode(id);
     }
 }

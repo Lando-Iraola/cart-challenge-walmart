@@ -24,7 +24,8 @@ public class Cart {
     private List<CartItem> items = new ArrayList<>();
 
     // Standard constructor for JPA
-    protected Cart() {}
+    protected Cart() {
+    }
 
     // Constructor for manual setup
     public Cart(String taxRate) {
@@ -34,7 +35,7 @@ public class Cart {
     // --- Helper Methods ---
 
     /**
-     * Adds an item to the cart and ensures the CartItem knows 
+     * Adds an item to the cart and ensures the CartItem knows
      * which cart it belongs to (Bidirectional synchronization).
      */
     public void addItem(Product product, int quantity) {
@@ -72,13 +73,15 @@ public class Cart {
         return items;
     }
 
-    // We typically don't provide a setter for a List in JPA to avoid 
+    // We typically don't provide a setter for a List in JPA to avoid
     // replacing the Hibernate-managed collection instance.
-    
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Cart cart = (Cart) o;
         return Objects.equals(id, cart.id);
     }

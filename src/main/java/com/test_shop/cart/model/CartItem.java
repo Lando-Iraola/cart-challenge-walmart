@@ -26,7 +26,8 @@ public class CartItem {
     private int quantity = 1;
 
     // JPA mandatory no-args constructor
-    protected CartItem() {}
+    protected CartItem() {
+    }
 
     public CartItem(Cart cart, Product product, int quantity) {
         this.cart = cart;
@@ -42,15 +43,28 @@ public class CartItem {
     }
 
     // Getters
-    public UUID getId() { return id; }
-    public Cart getCart() { return cart; }
-    public Product getProduct() { return product; }
-    public int getQuantity() { return quantity; }
+    public UUID getId() {
+        return id;
+    }
+
+    public Cart getCart() {
+        return cart;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof CartItem that)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof CartItem that))
+            return false;
         return Objects.equals(id, that.id);
     }
 
