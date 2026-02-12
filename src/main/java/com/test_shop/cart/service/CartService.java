@@ -42,15 +42,15 @@ public class CartService {
             double activeDiscount = 0;
             RulesService heavyRule = null;
             for (RulesService descuento : descuentos) {
-                if (heavyRule == null && (descuento.isInTargetList(producto.getProduct())
-                        || descuento.isInTargetList(producto.getProduct().getBrand()) ||
-                        descuento.isInTargetList(paymentProcessorService))) {
-                    heavyRule = descuento;
-                }
                 if (descuento.isInTargetList(producto.getProduct())
                         || descuento.isInTargetList(producto.getProduct().getBrand()) ||
                         descuento.isInTargetList(paymentProcessorService)) {
-                    heavyRule = heavyRule.moreImpolrtantRule(descuento);
+                    if (heavyRule == null) {
+                        heavyRule = descuento;
+                    } else {
+
+                        heavyRule = heavyRule.moreImpolrtantRule(descuento);
+                    }
                 }
                 activeDiscount = ruleDiscount(descuento, producto, activeDiscount, heavyRule);
             }
