@@ -23,7 +23,8 @@ public class Product {
     private Money price;
 
     // Standard constructor for JPA
-    protected Product() {}
+    protected Product() {
+    }
 
     // Constructor for manual setup
     public Product(String name, Brand brand, Money price) {
@@ -34,30 +35,55 @@ public class Product {
 
     // --- Manual Getters and Setters ---
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public UUID getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 
-    public Brand getBrand() { return brand; }
-    public void setBrand(Brand brand) { this.brand = brand; }
+    public String getName() {
+        return name;
+    }
 
-    public Money getPrice() { return price; }
-    public void setPrice(Money price) { this.price = price; }
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Brand getBrand() {
+        return brand;
+    }
+
+    public void setBrand(Brand brand) {
+        this.brand = brand;
+    }
+
+    public Money getPrice() {
+        return price;
+    }
+
+    public void setPrice(Money price) {
+        this.price = price;
+    }
 
     // --- Overriding Equals and HashCode ---
     // Critical for the rule engine's .contains(product) logic
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Product product = (Product) o;
+        if (this == o)
+            return true;
+        if (!(o instanceof Product product))
+            return false;
+        // If ID is null (unsaved entity), they are only equal if they are the same
+        // instance
+        if (id == null || product.id == null)
+            return false;
         return Objects.equals(id, product.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hashCode(id);
     }
 }

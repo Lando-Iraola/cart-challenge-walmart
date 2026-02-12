@@ -1,75 +1,230 @@
 package com.test_shop.cart.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.test_shop.cart.model.*;
 import com.test_shop.cart.model.rules.*;
-import com.test_shop.cart.repository.*;
+import com.test_shop.cart.repository.RuleRepository;
 
-@SpringBootTest
-@Transactional // This rolls back database changes after every test automatically
-class CartCalculationIntegrationTest {
+@ExtendWith(MockitoExtension.class)
+public class CartCalculationIntegrationTest {
 
-    @Autowired private CartCalculationService calculationService;
-    @Autowired private ProductRepository productRepository;
-    @Autowired private BrandRepository brandRepository;
-    @Autowired private RuleRepository ruleRepository;
-    @Autowired private PaymentProcessorRepository processorRepository;
-    @Autowired private CartRepository cartRepository;
+    private CartCalculationService calculationService;
+
+    @Mock
+    private RuleRepository ruleRepository;
+
+    @BeforeEach
+    void setUp() {
+        calculationService = new CartCalculationService(ruleRepository);
+    }
 
     @Test
-    void testComplexRuleStackingWithH2() {
-        // 1. Setup Infrastructure in H2
-        Brand colun = brandRepository.save(new Brand("Colun"));
+    void testCartDiscount() {
+        Brand colun = new Brand("Colun");
+        Product leche = new Product("Leche", colun, new Money(new BigDecimal("1500")));
         
-        Product leche = productRepository.save(
-            new Product("Leche", colun, new Money(new BigDecimal("1500")))
-        );
-
-        PaymentProcessor masterplop = processorRepository.save(
-            new PaymentProcessor("masterplop")
-        );
-
-        // 2. Setup Rules in H2
-        // Rule A: Promo "Buy 2 Get 1" (Weight 20, Stackable)
-        PromoRule promo = new PromoRule(2, 1, (byte) 2);
-        promo.setWeight((byte) 20);
-        promo.setStackWithOtherRules(true);
+        PromoRule promo = new PromoRule(2, 1, 2);
+        promo.setWeight((byte) 10);
         promo.getTargetProducts().add(leche);
-        ruleRepository.save(promo);
 
-        // Rule B: Payment Discount 60% (Weight 40, Stackable)
-        PaymentProcessorRule payRule = new PaymentProcessorRule(new BigDecimal("0.6"));
-        payRule.setWeight((byte) 40);
-        payRule.setStackWithOtherRules(true);
-        payRule.getTargetProcessors().add(masterplop);
-        ruleRepository.save(payRule);
+        when(ruleRepository.findAll()).thenReturn(List.of(promo));
 
-        // 3. Create Cart and Calculate
+        Cart cart = new Cart("0.19");
+        cart.addItem(leche, 3); // 2 pay 1 + 1 pay 1 = 3000 subtotal
+
+        BigDecimal subtotal = new BigDecimal("3000");
+        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        
+        String res = calculationService.calcularTotal(cart);
+        assertEquals(totalEsperado.toPlainString(), res);
+    }
+
+    @Test
+    void testCartDiscountProductWithAndWithoutDiscount() {
+        Brand colun = new Brand("Colun");
+        Product leche = new Product("Leche", colun, new Money(new BigDecimal("1500")));
+        Product manjar = new Product("Manjar", colun, new Money(new BigDecimal("2000")));
+
+        PromoRule promo = new PromoRule(2, 1, 2);
+        promo.setWeight((byte) 10);
+        promo.getTargetProducts().add(leche);
+
+        when(ruleRepository.findAll()).thenReturn(List.of(promo));
+
+        Cart cart = new Cart("0.19");
+        cart.addItem(leche, 3); // 3000
+        cart.addItem(manjar, 1); // 2000
+
+        BigDecimal subtotal = new BigDecimal("5000");
+        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+
+        String res = calculationService.calcularTotal(cart);
+        assertEquals(totalEsperado.toPlainString(), res);
+    }
+
+    @Test
+    void testCartDiscountTwoProduct() {
+        Brand colun = new Brand("Colun");
+        Product leche = new Product("Leche", colun, new Money(new BigDecimal("1500")));
+        Product manjar = new Product("Manjar", colun, new Money(new BigDecimal("2000")));
+
+        PromoRule promo = new PromoRule(2, 1, 2);
+        promo.setWeight((byte) 10);
+        promo.getTargetProducts().add(leche);
+        promo.getTargetProducts().add(manjar);
+
+        when(ruleRepository.findAll()).thenReturn(List.of(promo));
+
+        Cart cart = new Cart("0.19");
+        cart.addItem(leche, 3);  // 3000
+        cart.addItem(manjar, 2); // 2000
+
+        BigDecimal subtotal = new BigDecimal("5000");
+        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+
+        String res = calculationService.calcularTotal(cart);
+        assertEquals(totalEsperado.toPlainString(), res);
+    }
+
+    @Test
+    void testCartDiscountTwoDiscountOnePerProduct() {
+        Brand colun = new Brand("Colun");
+        Product leche = new Product("Leche", colun, new Money(new BigDecimal("1500")));
+        Product manjar = new Product("Manjar", colun, new Money(new BigDecimal("2000")));
+
+        PromoRule promoLeche = new PromoRule(2, 1, 2);
+        promoLeche.getTargetProducts().add(leche);
+
+        DiscountRule discountManjar = new DiscountRule(new BigDecimal("0.10"));
+        discountManjar.getTargetProducts().add(manjar);
+
+        when(ruleRepository.findAll()).thenReturn(List.of(promoLeche, discountManjar));
+
+        Cart cart = new Cart("0.19");
+        cart.addItem(leche, 3);
+        cart.addItem(manjar, 1);
+
+        BigDecimal subtotal = new BigDecimal("4800");
+        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+
+        String res = calculationService.calcularTotal(cart);
+        assertEquals(totalEsperado.toPlainString(), res);
+    }
+
+    @Test
+    void testCartDiscountTwoCompitingDiscountOneProduct() {
+        Brand colun = new Brand("Colun");
+        Product leche = new Product("Leche", colun, new Money(new BigDecimal("1500")));
+
+        PromoRule betterRule = new PromoRule(2, 1, 2);
+        betterRule.setWeight((byte) 20);
+        betterRule.getTargetProducts().add(leche);
+
+        DiscountRule worseRule = new DiscountRule(new BigDecimal("0.10"));
+        worseRule.setWeight((byte) 10);
+        worseRule.getTargetProducts().add(leche);
+
+        when(ruleRepository.findAll()).thenReturn(List.of(betterRule, worseRule));
+
+        Cart cart = new Cart("0.19");
+        cart.addItem(leche, 3);
+
+        BigDecimal subtotal = new BigDecimal("3000");
+        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+
+        String res = calculationService.calcularTotal(cart);
+        assertEquals(totalEsperado.toPlainString(), res);
+    }
+
+    @Test
+    void testCartDiscountThreeCompitingDiscountOneProductPaymentProcessor() {
+        Brand colun = new Brand("Colun");
+        Product leche = new Product("Leche", colun, new Money(new BigDecimal("1500")));
+        PaymentProcessor masterplop = new PaymentProcessor("masterplop");
+
+        PromoRule rule1 = new PromoRule(2, 1, 2);
+        rule1.setWeight((byte) 20);
+        rule1.getTargetProducts().add(leche);
+
+        DiscountRule rule2 = new DiscountRule(new BigDecimal("0.10"));
+        rule2.setWeight((byte) 10);
+        rule2.getTargetProducts().add(leche);
+
+        PaymentProcessorRule rule3 = new PaymentProcessorRule(new BigDecimal("0.60"));
+        rule3.setWeight((byte) 40);
+        rule3.getTargetProcessors().add(masterplop);
+
+        when(ruleRepository.findAll()).thenReturn(List.of(rule1, rule2, rule3));
+
         Cart cart = new Cart("0.19");
         cart.setPaymentProcessor(masterplop);
-        cart.addItem(leche, 3); // 3 units
-        cartRepository.save(cart);
+        cart.addItem(leche, 3); // 4500 * 0.4 multiplier = 1800
 
-        // EXPECTED MATH:
-        // Base: 4500
-        // Promo Effect: Pay 2, get 1 free -> Discount factor 0.666... (removes 1500)
-        // Payment Effect: 60% off -> Discount factor 0.40 (removes 60% of original price)
-        // Cumulative logic: multiplier = 1.0 - (1.0 - 0.666) - (1.0 - 0.40) = 0.066...
-        // Result: Approx 300 base + 19% tax.
-        
-        String result = calculationService.calcularTotal(cart);
-        
-        // Asserting against your specific logic results
-        // (Adjust the string value based on your exact rounding preference)
-        assertEquals("357", result); 
+        BigDecimal subtotal = new BigDecimal("1800");
+        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+
+        String res = calculationService.calcularTotal(cart);
+        assertEquals(totalEsperado.toPlainString(), res);
+    }
+
+    @Test
+    void testCartDiscountThreeCumulativeDiscounts() {
+        Brand colun = new Brand("Colun");
+        Product leche = new Product("Leche", colun, new Money(new BigDecimal("1500")));
+
+        DiscountRule freeRule = new DiscountRule(new BigDecimal("1.0"));
+        freeRule.setStackWithOtherRules(true);
+        freeRule.getTargetProducts().add(leche);
+
+        when(ruleRepository.findAll()).thenReturn(List.of(freeRule));
+
+        Cart cart = new Cart("0.19");
+        cart.addItem(leche, 3);
+
+        BigDecimal totalEsperado = new BigDecimal("0").setScale(0, RoundingMode.HALF_UP);
+
+        String res = calculationService.calcularTotal(cart);
+        assertEquals(totalEsperado.toPlainString(), res);
+    }
+
+    @Test
+    void testCartNoDiscounts() {
+        Brand colun = new Brand("Colun");
+        Product leche = new Product("Leche", colun, new Money(new BigDecimal("1500")));
+
+        when(ruleRepository.findAll()).thenReturn(new ArrayList<>());
+
+        Cart cart = new Cart("0.19");
+        cart.addItem(leche, 3);
+
+        BigDecimal subtotal = new BigDecimal("4500");
+        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+
+        String res = calculationService.calcularTotal(cart);
+        assertEquals(totalEsperado.toPlainString(), res);
+    }
+
+    @Test
+    void testCartNoItems() {
+        when(ruleRepository.findAll()).thenReturn(new ArrayList<>());
+        Cart cart = new Cart("0.19");
+
+        BigDecimal totalEsperado = new BigDecimal("0").setScale(0, RoundingMode.HALF_UP);
+
+        String res = calculationService.calcularTotal(cart);
+        assertEquals(totalEsperado.toPlainString(), res);
     }
 }
