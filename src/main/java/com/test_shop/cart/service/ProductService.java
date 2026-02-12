@@ -18,11 +18,19 @@ public class ProductService {
         return this.name;
     }
 
-    public String getBrand(){
+    public BrandService getBrand(){
+        return this.brand;
+    }
+
+    public String getBrandName(){
         return this.brand.getName();
     }
 
-    public BigDecimal getPrice(){
+    public MoneyService getPrice(){
+        return this.price;
+    }
+
+    public String getPriceAsString(){
         return this.price.getValue();
     }
 

@@ -2,7 +2,7 @@ package com.test_shop.cart.service.rules;
 
 public final class PromoRule implements KnownRules {
     @Override
-    public Double CalculateDiscout(int quantityThreshold, int discountMagnitude, int quantity,
+    public double CalculateDiscout(int quantityThreshold, int discountMagnitude, int quantity,
             int discountAppliesThisManyTimes) {
         if (discountAppliesThisManyTimes == 0) {
             throw new IllegalArgumentException("El descuento no puede ser aplicado 0 veces");

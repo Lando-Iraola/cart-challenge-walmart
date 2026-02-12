@@ -14,6 +14,10 @@ public class RulesService {
     private RuleTarget target;
     private boolean stackWithOtherRules;
     private KnownRules rule;
+    private byte maxApplicability;
+    private int quantityThreshold; 
+    private int discountMagnitude;
+    private double flatRateDiscount;
 
     public RulesService(String description, byte weight, RuleTarget target, boolean stackWithOtherRules, KnownRules rule){
         this.description = description;
@@ -41,6 +45,22 @@ public class RulesService {
 
     public KnownRules getRule(){
         return this.rule;
+    }
+
+    public byte getMaxApplicability(){
+        return this.maxApplicability;
+    }
+
+    public int getQuantityThreshold(){
+        return this.quantityThreshold;
+    }
+    
+    public int getDiscountMagnitude(){
+        return this.discountMagnitude;
+    }
+
+    public double getFlatRateDiscount(){
+        return this.flatRateDiscount;
     }
 
     public boolean isInTargetList(BrandService brand){
