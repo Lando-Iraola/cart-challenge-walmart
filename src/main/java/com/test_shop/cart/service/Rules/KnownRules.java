@@ -2,7 +2,10 @@ package com.test_shop.cart.service.Rules;
 
 public sealed interface KnownRules permits DiscountRule, PromoRule, CardIssuerRule {
     default public Double CalculateDiscout(double flatRate){
-        return 1.0;
+        if (flatRate > 1.0) {
+            throw new IllegalArgumentException("Descuento invalido, se intento aumentar el precio");
+        }
+        return flatRate;
     };
-    default public Double CalculateDiscout(int quantityThreshold, int discountMagnitude, int quantity, int discountAppliesThisManyTimes) {return CalculateDiscout();}
+    default public Double CalculateDiscout(int quantityThreshold, int discountMagnitude, int quantity, int discountAppliesThisManyTimes) {return 1.0;}
 }
