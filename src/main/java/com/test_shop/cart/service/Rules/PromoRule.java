@@ -1,4 +1,4 @@
-package com.test_shop.cart.service.Rules;
+package com.test_shop.cart.service.rules;
 
 public final class PromoRule implements KnownRules {
     @Override

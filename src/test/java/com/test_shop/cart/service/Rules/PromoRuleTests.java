@@ -1,6 +1,7 @@
-package com.test_shop.cart.service.Rules;
+package com.test_shop.cart.service.rules;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class PromoRuleTests {

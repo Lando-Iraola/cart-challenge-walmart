@@ -1,4 +1,4 @@
-package com.test_shop.cart.service.Rules;
+package com.test_shop.cart.service.rules;
 
 public sealed interface KnownRules permits DiscountRule, PromoRule, CardIssuerRule {
     default public Double CalculateDiscout(double flatRate){

@@ -12,8 +12,4 @@ public class MoneyService {
     public BigDecimal getValue(){
         return this.value;
     }
-
-    public BigDecimal getValue(RulesService rule){
-        return this.value;
-    }
 }
