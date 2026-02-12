@@ -215,4 +215,34 @@ public class CartServiceTests {
         String res = cs.CalcularTotal();
         assertEquals(res, totalEsperado.toPlainString());
     }
+
+    @Test
+    void testCartNoDiscounts() {
+        BrandService colun = new BrandService("Colun");
+        ProductService leche = new ProductService("Leche", colun, new MoneyService(new BigDecimal("1500")));
+
+        PaymentProcessorService ps = new PaymentProcessorService("masterplop");
+
+        CartItemService cis = new CartItemService(leche, 3);
+        CartService cs = new CartService(new ArrayList<>(List.of(cis)), new ArrayList<>(List.of()), "0.19",
+                ps);
+
+        BigDecimal totalEsperado = new BigDecimal("4500");
+        totalEsperado = totalEsperado.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        String res = cs.CalcularTotal();
+        assertEquals(res, totalEsperado.toPlainString());
+    }
+
+    @Test
+    void testCartNoItems() {
+        PaymentProcessorService ps = new PaymentProcessorService("masterplop");
+
+        CartService cs = new CartService(new ArrayList<>(List.of()), new ArrayList<>(List.of()), "0.19",
+                ps);
+
+        BigDecimal totalEsperado = new BigDecimal("0");
+        totalEsperado = totalEsperado.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        String res = cs.CalcularTotal();
+        assertEquals(res, totalEsperado.toPlainString());
+    }
 }
