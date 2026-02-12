@@ -1,6 +1,9 @@
 package com.test_shop.cart.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 import com.test_shop.cart.service.rules.KnownRules;
 import com.test_shop.cart.service.rules.targets.BrandList;
@@ -107,4 +110,19 @@ public class RulesService {
 
         return false;
     }
+
+    public RulesService moreImpolrtantRule(RulesService otherRule) {
+        if (this == otherRule) {
+            return this;
+        }
+
+        if (!otherRule.getStackWithOtherRules() && otherRule.getWeight() > this.getWeight()) {
+            return otherRule;
+        } else if (!this.getStackWithOtherRules() && otherRule.getWeight() > this.getWeight()) {
+            return otherRule;
+        }
+
+        return this;
+    }
+
 }

@@ -40,8 +40,19 @@ public class CartService {
 
         for (CartItemService producto : productos) {
             double activeDiscount = 0;
+            RulesService heavyRule = null;
             for (RulesService descuento : descuentos) {
-                activeDiscount = ruleDiscount(descuento, producto, activeDiscount);
+                if (heavyRule == null && (descuento.isInTargetList(producto.getProduct())
+                        || descuento.isInTargetList(producto.getProduct().getBrand()) ||
+                        descuento.isInTargetList(paymentProcessorService))) {
+                    heavyRule = descuento;
+                }
+                if (descuento.isInTargetList(producto.getProduct())
+                        || descuento.isInTargetList(producto.getProduct().getBrand()) ||
+                        descuento.isInTargetList(paymentProcessorService)) {
+                    heavyRule = heavyRule.moreImpolrtantRule(descuento);
+                }
+                activeDiscount = ruleDiscount(descuento, producto, activeDiscount, heavyRule);
             }
 
             if (activeDiscount == 0) {
@@ -60,12 +71,14 @@ public class CartService {
         return this.total.getValueWithTax();
     }
 
-    private double ruleDiscount(RulesService descuento, CartItemService producto, double activeDiscount) {
-        KnownRules rule = descuento.getRule();
+    private double ruleDiscount(RulesService descuento, CartItemService producto, double activeDiscount,
+            RulesService heavyRule) {
+
         boolean isProductTarget = descuento.isInTargetList(producto.getProduct());
         boolean isBrandTarget = descuento.isInTargetList(producto.getProduct().getBrand());
         boolean isPaymentTarget = descuento.isInTargetList(paymentProcessorService);
         if (isProductTarget || isBrandTarget || isPaymentTarget) {
+            KnownRules rule = descuento.getRule();
             double discount = switch (rule) {
                 case DiscountRule d -> d.CalculateDiscout(descuento.getFlatRateDiscount());
                 case PromoRule p -> p.CalculateDiscout(descuento.getQuantityThreshold(),
@@ -75,9 +88,21 @@ public class CartService {
                 default -> 0.0;
             };
 
-            if (!descuento.getStackWithOtherRules() && activeDiscount == 0.0) {
+            RulesService applyThisRule = heavyRule.moreImpolrtantRule(descuento);
+            boolean playsAlong = descuento.getStackWithOtherRules() && applyThisRule.getStackWithOtherRules();
+
+            if (!playsAlong && activeDiscount == 0.0) {
+                rule = applyThisRule.getRule();
+                discount = switch (rule) {
+                    case DiscountRule d -> d.CalculateDiscout(applyThisRule.getFlatRateDiscount());
+                    case PromoRule p -> p.CalculateDiscout(applyThisRule.getQuantityThreshold(),
+                            applyThisRule.getDiscountMagnitude(), producto.getQuantity(),
+                            applyThisRule.getMaxApplicability());
+                    case CardIssuerRule c -> c.CalculateDiscout(applyThisRule.getFlatRateDiscount());
+                    default -> 0.0;
+                };
                 activeDiscount += discount;
-            } else if (descuento.getStackWithOtherRules() && activeDiscount + discount < 1.0) {
+            } else if (playsAlong && activeDiscount + discount < 1.0) {
                 activeDiscount += discount;
             }
         }
