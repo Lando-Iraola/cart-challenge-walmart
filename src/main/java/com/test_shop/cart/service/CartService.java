@@ -15,6 +15,13 @@ public class CartService {
     private String impuesto;
     private PaymentProcessorService paymentProcessorService;
 
+        public CartService(ArrayList<CartItemService> productos, ArrayList<RulesService> descuentos, String impuesto,  PaymentProcessorService paymentProcessorService) {
+        this.productos = productos;
+        this.descuentos = descuentos;
+        this.impuesto = impuesto;
+        this.paymentProcessorService = paymentProcessorService;
+    }
+
     public CartService(ArrayList<CartItemService> productos, ArrayList<RulesService> descuentos, String impuesto) {
         this.productos = productos;
         this.descuentos = descuentos;
@@ -91,7 +98,7 @@ public class CartService {
             RulesService applyThisRule = heavyRule.moreImpolrtantRule(descuento);
             boolean playsAlong = descuento.getStackWithOtherRules() && applyThisRule.getStackWithOtherRules();
 
-            if (!playsAlong && activeDiscount == 0.0) {
+            if (!playsAlong) {
                 rule = applyThisRule.getRule();
                 discount = switch (rule) {
                     case DiscountRule d -> d.CalculateDiscout(applyThisRule.getFlatRateDiscount());
@@ -101,7 +108,7 @@ public class CartService {
                     case CardIssuerRule c -> c.CalculateDiscout(applyThisRule.getFlatRateDiscount());
                     default -> 0.0;
                 };
-                activeDiscount += discount;
+                activeDiscount = discount;
             } else if (playsAlong && activeDiscount + discount < 1.0) {
                 activeDiscount += discount;
             }

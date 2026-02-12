@@ -10,9 +10,11 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.test_shop.cart.service.rules.CardIssuerRule;
 import com.test_shop.cart.service.rules.DiscountRule;
 import com.test_shop.cart.service.rules.KnownRules;
 import com.test_shop.cart.service.rules.PromoRule;
+import com.test_shop.cart.service.rules.targets.PaymentProcessorsList;
 import com.test_shop.cart.service.rules.targets.ProductList;
 import com.test_shop.cart.service.rules.targets.RuleTarget;
 
@@ -38,7 +40,7 @@ public class CartServiceTests {
         CartItemService cis = new CartItemService(leche, 3);
 
         CartService cs = new CartService(new ArrayList<>(List.of(cis)), new ArrayList<>(List.of(rs)), "0.19");
-        
+
         BigDecimal totalEsperado = new BigDecimal("3000");
         totalEsperado = totalEsperado.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
         String res = cs.CalcularTotal();
@@ -52,7 +54,7 @@ public class CartServiceTests {
         byte weight = 10;
         BrandService colun = new BrandService("Colun");
         ProductService leche = new ProductService("Leche", colun, new MoneyService(new BigDecimal("1500")));
-        
+
         RuleTarget target = new ProductList(new ArrayList<>(List.of(leche)));
         boolean stackWithOtherRules = false;
         KnownRules rule = new PromoRule();
@@ -69,12 +71,13 @@ public class CartServiceTests {
         CartItemService cis2 = new CartItemService(manjar, 1);
 
         CartService cs = new CartService(new ArrayList<>(List.of(cis, cis2)), new ArrayList<>(List.of(rs)), "0.19");
-        
+
         BigDecimal totalEsperado = new BigDecimal("5000");
         totalEsperado = totalEsperado.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
         String res = cs.CalcularTotal();
         assertEquals(res, totalEsperado.toPlainString());
     }
+
     @Test
     void testCartDiscountTwoProduct() {
 
@@ -95,11 +98,11 @@ public class CartServiceTests {
                 quantityThreshold, discountMagnitude, flatRateDiscount);
 
         CartItemService cis = new CartItemService(leche, 3);
-        
+
         CartItemService cis2 = new CartItemService(manjar, 2);
 
         CartService cs = new CartService(new ArrayList<>(List.of(cis, cis2)), new ArrayList<>(List.of(rs)), "0.19");
-        
+
         BigDecimal totalEsperado = new BigDecimal("5000");
         totalEsperado = totalEsperado.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
         String res = cs.CalcularTotal();
@@ -130,12 +133,84 @@ public class CartServiceTests {
                 0, 0, 0.1);
 
         CartItemService cis = new CartItemService(leche, 3);
-        
+
         CartItemService cis2 = new CartItemService(manjar, 1);
 
-        CartService cs = new CartService(new ArrayList<>(List.of(cis, cis2)), new ArrayList<>(List.of(rs, rs2)), "0.19");
-        
+        CartService cs = new CartService(new ArrayList<>(List.of(cis, cis2)), new ArrayList<>(List.of(rs, rs2)),
+                "0.19");
+
         BigDecimal totalEsperado = new BigDecimal("4800");
+        totalEsperado = totalEsperado.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        String res = cs.CalcularTotal();
+        assertEquals(res, totalEsperado.toPlainString());
+    }
+
+    @Test
+    void testCartDiscountTwoCompitingDiscountOneProduct() {
+
+        String description = "A test ruleservice";
+        byte weight = 10;
+        BrandService colun = new BrandService("Colun");
+        ProductService leche = new ProductService("Leche", colun, new MoneyService(new BigDecimal("1500")));
+        RuleTarget target = new ProductList(new ArrayList<>(List.of(leche)));
+        boolean stackWithOtherRules = false;
+        KnownRules rule = new PromoRule();
+        byte maxApplicability = 2;
+        int quantityThreshold = 2;
+        int discountMagnitude = 1;
+        double flatRateDiscount = 0.0;
+
+        RulesService rs = new RulesService(description, (byte) (weight * 2), target, stackWithOtherRules, rule,
+                maxApplicability,
+                quantityThreshold, discountMagnitude, flatRateDiscount);
+        KnownRules rule2 = new DiscountRule();
+        RulesService rs2 = new RulesService(description, weight, target, true, rule2, maxApplicability,
+                0, 0, 0.1);
+
+        CartItemService cis = new CartItemService(leche, 3);
+
+        CartService cs = new CartService(new ArrayList<>(List.of(cis)), new ArrayList<>(List.of(rs, rs2)), "0.19");
+
+        BigDecimal totalEsperado = new BigDecimal("3000");
+        totalEsperado = totalEsperado.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        String res = cs.CalcularTotal();
+        assertEquals(res, totalEsperado.toPlainString());
+    }
+
+    @Test
+    void testCartDiscountThreeCompitingDiscountOneProductPaymentProcessor() {
+
+        String description = "A test ruleservice";
+        byte weight = 10;
+        BrandService colun = new BrandService("Colun");
+        ProductService leche = new ProductService("Leche", colun, new MoneyService(new BigDecimal("1500")));
+        RuleTarget target = new ProductList(new ArrayList<>(List.of(leche)));
+        boolean stackWithOtherRules = false;
+        KnownRules rule = new PromoRule();
+        byte maxApplicability = 2;
+        int quantityThreshold = 2;
+        int discountMagnitude = 1;
+        double flatRateDiscount = 0.0;
+
+        RulesService rs = new RulesService(description, (byte) (weight * 2), target, stackWithOtherRules, rule,
+                maxApplicability,
+                quantityThreshold, discountMagnitude, flatRateDiscount);
+        KnownRules rule2 = new DiscountRule();
+        RulesService rs2 = new RulesService(description, weight, target, true, rule2, maxApplicability,
+                0, 0, 0.1);
+        KnownRules rule3 = new CardIssuerRule();
+        PaymentProcessorService ps = new PaymentProcessorService("masterplop");
+        RuleTarget target2 = new PaymentProcessorsList(new ArrayList<>(List.of(ps)));
+        RulesService rs3 = new RulesService(description, (byte) (weight * 4), target2, false, rule3, maxApplicability,
+                0, 0, 0.6);
+
+        CartItemService cis = new CartItemService(leche, 3);
+
+        PaymentProcessorService ps2 = new PaymentProcessorService("masterplop");
+        CartService cs = new CartService(new ArrayList<>(List.of(cis)), new ArrayList<>(List.of(rs, rs2, rs3)), "0.19",
+                ps2);
+
+        BigDecimal totalEsperado = new BigDecimal("1800");
         totalEsperado = totalEsperado.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
         String res = cs.CalcularTotal();
         assertEquals(res, totalEsperado.toPlainString());
