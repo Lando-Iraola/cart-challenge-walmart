@@ -87,4 +87,20 @@ class PromoRuleTests {
         double expectedTotal = quantityOfItemsBeingPaidFor * itemPrice;
         assertEquals(totalPrice, expectedTotal);
     }
+
+    @Test
+    void thresholdNotReached(){
+        PromoRule promo = new PromoRule();
+        int itemsQuantity = 4;
+        int threshold = 6;
+        int discountMagnitude = 5;
+        int applyThiscountUpTo = 1;
+        
+        double discount = promo.CalculateDiscout(threshold, discountMagnitude, itemsQuantity, applyThiscountUpTo);
+        double itemPrice = 2.0;
+        double totalPrice = itemsQuantity * itemPrice * discount;
+        double quantityOfItemsBeingPaidFor = 4;
+        double expectedTotal = quantityOfItemsBeingPaidFor * itemPrice;
+        assertEquals(totalPrice, expectedTotal);
+    }
 }
