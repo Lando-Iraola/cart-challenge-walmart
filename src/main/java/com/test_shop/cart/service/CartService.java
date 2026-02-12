@@ -46,7 +46,8 @@ public class CartService {
         }
 
         for (CartItemService producto : productos) {
-            double activeDiscount = 0;
+            double activeDiscount = 1.0;
+            boolean hasDiscount = false;
             RulesService heavyRule = null;
             for (RulesService descuento : descuentos) {
                 if (descuento.isInTargetList(producto.getProduct())
@@ -60,9 +61,12 @@ public class CartService {
                     }
                 }
                 activeDiscount = ruleDiscount(descuento, producto, activeDiscount, heavyRule);
+                if(activeDiscount < 1.0){
+                    hasDiscount = true;
+                }
             }
 
-            if (activeDiscount == 0) {
+            if (!hasDiscount) {
                 BigDecimal price = new BigDecimal(producto.getProduct().getPriceAsString());
                 price = price.multiply(new BigDecimal(producto.getQuantity()));
                 this.total.add(price.toPlainString());
@@ -109,9 +113,13 @@ public class CartService {
                     default -> 0.0;
                 };
                 activeDiscount = discount;
-            } else if (playsAlong && activeDiscount + discount < 1.0) {
-                activeDiscount += discount;
+            } else {
+                activeDiscount -= discount;
             }
+        }
+
+        if (activeDiscount < 0.0){
+            activeDiscount = 0;
         }
 
         return activeDiscount;

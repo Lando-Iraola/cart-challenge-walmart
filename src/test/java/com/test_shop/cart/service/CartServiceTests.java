@@ -217,6 +217,45 @@ public class CartServiceTests {
     }
 
     @Test
+    void testCartDiscountThreeCumulativeDiscounts() {
+
+        String description = "A test ruleservice";
+        byte weight = 10;
+        BrandService colun = new BrandService("Colun");
+        ProductService leche = new ProductService("Leche", colun, new MoneyService(new BigDecimal("1500")));
+        RuleTarget target = new ProductList(new ArrayList<>(List.of(leche)));
+        boolean stackWithOtherRules = true;
+        KnownRules rule = new PromoRule();
+        byte maxApplicability = 2;
+        int quantityThreshold = 2;
+        int discountMagnitude = 1;
+        double flatRateDiscount = 0.0;
+
+        RulesService rs = new RulesService(description, (byte) (weight * 2), target, stackWithOtherRules, rule,
+                maxApplicability,
+                quantityThreshold, discountMagnitude, flatRateDiscount);
+        KnownRules rule2 = new DiscountRule();
+        RulesService rs2 = new RulesService(description, weight, target, true, rule2, maxApplicability,
+                0, 0, 0.1);
+        KnownRules rule3 = new CardIssuerRule();
+        PaymentProcessorService ps = new PaymentProcessorService("masterplop");
+        RuleTarget target2 = new PaymentProcessorsList(new ArrayList<>(List.of(ps)));
+        RulesService rs3 = new RulesService(description, (byte) (weight * 4), target2, true, rule3, maxApplicability,
+                0, 0, 0.6);
+
+        CartItemService cis = new CartItemService(leche, 3);
+
+        PaymentProcessorService ps2 = new PaymentProcessorService("masterplop");
+        CartService cs = new CartService(new ArrayList<>(List.of(cis)), new ArrayList<>(List.of(rs, rs2, rs3)), "0.19",
+                ps2);
+
+        BigDecimal totalEsperado = new BigDecimal("0");
+        totalEsperado = totalEsperado.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        String res = cs.CalcularTotal();
+        assertEquals(res, totalEsperado.toPlainString());
+    }
+
+    @Test
     void testCartNoDiscounts() {
         BrandService colun = new BrandService("Colun");
         ProductService leche = new ProductService("Leche", colun, new MoneyService(new BigDecimal("1500")));
