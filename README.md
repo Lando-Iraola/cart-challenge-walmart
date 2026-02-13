@@ -26,6 +26,7 @@ Añadido api rest __con panico__ tras olvidamr de ella, una vez mas, con Gemini.
 
 ## Dependencias
 - Java 25
+- Springboot 4.0.2
 
 ## Como correr
 Se debe tener instalado el JDK de Java 25  
@@ -33,6 +34,7 @@ Ingresar desde una terminal a la carpeta del proyecto y ejecutar
 ```bash
 ./gradlew bootRun
 ```
+Lo anterior levanta un tomcat en http://localhost:8080
 
 ### Alcance esperado 
 - Cálculo del subtotal del carrito. 
