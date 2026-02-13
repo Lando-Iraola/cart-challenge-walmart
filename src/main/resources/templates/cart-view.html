@@ -15,6 +15,7 @@
         .rule-item { background-color: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 8px; }
         .price-breakdown { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
         .text-indigo { color: #4f46e5; }
+        .product-row { transition: all 0.2s; }
     </style>
 </head>
 <body class="py-5">
@@ -31,24 +32,35 @@
         </div>
 
         <div class="row g-4">
-            <div class="col-lg-5">
+            <div class="col-lg-6">
                 <div class="card simulator-card p-4 shadow-sm">
                     <h5 class="fw-bold mb-4">Cart Configuration</h5>
-                    <form th:action="@{/cart/calculate}" th:object="${cartRequest}" method="post">
+                    
+                    <form th:action="@{/cart/calculate}" th:object="${cartRequest}" method="post" id="cartForm">
                         
                         <div class="mb-3">
-                            <label class="form-label">Product selection</label>
-                            <select th:field="*{productId}" class="form-select border-0 bg-light py-2" required>
-                                <option value="">-- Select Product --</option>
-                                <option th:each="p : ${products}" th:value="${p.id}" 
-                                        th:text="${p.name} + ' (' + ${p.brand.name} + ') - $' + ${#numbers.formatDecimal(p.price.value, 1, 2)}"></option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Units</label>
-                            <input type="number" th:field="*{quantity}" class="form-control border-0 bg-light py-2" min="1" required>
-                            <small class="text-muted">Increase quantity to trigger bulk promos.</small>
+                            <div class="d-flex justify-content-between align-items-end mb-2">
+                                <label class="form-label mb-0">Products & Quantities</label>
+                                <button type="button" class="btn btn-sm btn-link text-indigo text-decoration-none fw-bold" onclick="addRow()">+ Add Product</button>
+                            </div>
+                            
+                            <div id="product-list">
+                                <div th:each="item, itemStat : *{items}" class="row g-2 mb-2 product-row">
+                                    <div class="col-7">
+                                        <select th:field="*{items[__${itemStat.index}__].productId}" class="form-select border-0 bg-light" required>
+                                            <option value="">-- Select Product --</option>
+                                            <option th:each="p : ${products}" th:value="${p.id}" 
+                                                    th:text="${p.name} + ' (' + ${p.brand.name} + ') - $' + ${#numbers.formatDecimal(p.price.value, 1, 2)}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-3">
+                                        <input type="number" th:field="*{items[__${itemStat.index}__].quantity}" class="form-control border-0 bg-light" min="1" required>
+                                    </div>
+                                    <div class="col-2">
+                                        <button type="button" class="btn btn-light text-danger w-100" onclick="removeRow(this)">✕</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -64,69 +76,69 @@
                 </div>
             </div>
 
-            <div class="col-lg-7">
+            <div class="col-lg-6">
                 
-                <div th:if="${finalPrice != null}" class="card result-card shadow-lg p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-4">
-                        <div>
-                            <span class="badge bg-success mb-2">Calculation Success</span>
-                            <h2 class="fw-bold mb-0 text-dark" th:text="${selectedProduct.name}"></h2>
-                            <p class="text-muted small mb-0" th:text="'Brand: ' + ${selectedProduct.brand.name}"></p>
-                        </div>
-                        <div class="text-end">
-                            <span class="h4 fw-bold text-dark d-block mb-0" th:text="${selectedQuantity} + 'x'"></span>
-                            <small class="text-muted uppercase small fw-bold" style="font-size: 0.65rem;">Quantity</small>
+                <div th:if="${result != null}" class="card result-card shadow-lg p-4">
+                    <div class="mb-4">
+                        <span class="badge bg-success mb-2">Calculation Success</span>
+                        <h4 class="fw-bold text-dark">Cart Summary</h4>
+                        
+                        <div class="list-group list-group-flush">
+                            <div th:each="item : ${cart.items}" class="list-group-item px-0 bg-transparent d-flex justify-content-between">
+                                <div>
+                                    <span class="fw-bold" th:text="${item.product.name}">Product</span>
+                                    <br><small class="text-muted" th:text="${item.product.brand.name}">Brand</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold" th:text="${item.quantity} + 'x'">1x</span>
+                                    <br><small class="text-muted" th:text="'$' + ${#numbers.formatDecimal(item.product.price.value, 1, 2)}"></small>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label mb-2">Applied Strategy Rules</label>
-                        <div th:if="${not #lists.isEmpty(appliedRules)}">
-                            <div th:each="rule : ${appliedRules}" class="rule-item p-3 mb-2 d-flex align-items-center justify-content-between">
+                        <div th:if="${not #lists.isEmpty(result.details)}">
+                            <div th:each="rule : ${result.details}" class="rule-item p-3 mb-2 d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center">
                                     <span class="badge bg-white text-success border border-success-subtle me-3">Discount</span>
-                                    <div>
-                                        <div class="fw-bold small text-success-emphasis" th:text="${rule.description}">Rule Description</div>
-                                    </div>
+                                    <div class="fw-bold small text-success-emphasis" th:text="${rule.description}">Rule</div>
                                 </div>
                                 <span class="text-danger fw-bold" th:text="'-$' + ${#numbers.formatDecimal(rule.discountAmount, 1, 2)}">-$0.00</span>
                             </div>
                         </div>
-                        <div th:if="${#lists.isEmpty(appliedRules)}" class="p-3 border rounded-3 text-center text-muted small">
-                            No rules met the eligibility criteria for this selection.
+                        <div th:if="${#lists.isEmpty(result.details)}" class="p-3 border rounded-3 text-center text-muted small">
+                            No rules met the eligibility criteria.
                         </div>
                     </div>
 
                     <div class="price-breakdown p-3 mb-4">
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="small text-muted">Subtotal (Net Items):</span>
-                            <span class="small fw-bold text-dark" th:text="'$' + ${#numbers.formatDecimal(subtotal, 1, 2)}"></span>
+                            <span class="small text-muted">Subtotal (Gross):</span>
+                            <span class="small fw-bold text-dark" th:text="'$' + ${#numbers.formatDecimal(result.subtotal, 1, 2)}"></span>
                         </div>
                         
-                        <div th:each="rule : ${appliedRules}" class="d-flex justify-content-between mb-2">
-                            <span class="small text-muted" th:text="'Savings (' + ${rule.description} + '):'"></span>
-                            <span class="small text-danger fw-bold" th:text="'-$' + ${#numbers.formatDecimal(rule.discountAmount, 1, 2)}"></span>
-                        </div>
-
                         <div class="d-flex justify-content-between mb-2 pt-2 border-top">
-                            <span class="small text-muted" th:text="'Tax (' + ${taxRate} + '):'">Tax (19%):</span>
-                            <span class="small fw-bold text-dark" th:text="'+$' + ${#numbers.formatDecimal(taxAmount, 1, 2)}"></span>
+                            <span class="small text-muted">Tax (19%):</span>
+                            <span class="small fw-bold text-dark" th:text="'+$' + ${#numbers.formatDecimal(result.taxAmount, 1, 2)}"></span>
                         </div>
                         
                         <div class="d-flex justify-content-between">
                             <span class="small text-muted">Gateway:</span>
-                            <span class="small fw-bold text-indigo" th:text="${selectedProcessor.name}"></span>
+                            <span class="small fw-bold text-indigo" th:text="${cart.paymentProcessor.name}"></span>
                         </div>
                     </div>
 
                     <div class="text-center pt-3 border-top">
                         <p class="form-label mb-1">Final Amount (Total)</p>
-                        <h1 class="display-4 fw-black text-success mb-0" 
-                            th:text="'$' + ${#numbers.formatDecimal(finalPrice, 1, 2)}"></h1>
+                        <h1 class="display-4 fw-black text-success mb-0" th:text="'$' + ${result.finalTotal}">$0.00</h1>
                     </div>
+                    
+                    <a th:href="@{/cart}" class="btn btn-link btn-sm w-100 mt-3 text-muted text-decoration-none">Reset Simulator</a>
                 </div>
 
-                <div th:unless="${finalPrice != null}" class="h-100 d-flex align-items-center justify-content-center border border-2 border-dashed rounded-4 bg-white p-5 text-center shadow-sm">
+                <div th:if="${result == null}" class="h-100 d-flex align-items-center justify-content-center border border-2 border-dashed rounded-4 bg-white p-5 text-center shadow-sm">
                     <div class="opacity-50">
                         <h1 class="display-1 mb-3">📋</h1>
                         <h4 class="fw-bold text-dark">Ready for Simulation</h4>
@@ -138,8 +150,55 @@
         </div>
     </div>
 
-    
+    <script>
+        function addRow() {
+            const container = document.getElementById('product-list');
+            const rows = container.getElementsByClassName('product-row');
+            const nextIndex = rows.length;
+            
+            const template = rows[0];
+            const newRow = template.cloneNode(true);
+            
+            newRow.querySelectorAll('select, input').forEach(input => {
+                const name = input.getAttribute('name');
+                if (name) {
+                    // Update index: items[0].productId -> items[1].productId
+                    input.setAttribute('name', name.replace(/\[\d+\]/, `[${nextIndex}]`));
+                }
+                const id = input.getAttribute('id');
+                if (id) {
+                    // Update id: items0.productId -> items1.productId
+                    input.setAttribute('id', id.replace(/\d+/, nextIndex));
+                }
+                // Reset values
+                if (input.tagName === 'SELECT') input.selectedIndex = 0;
+                if (input.tagName === 'INPUT') input.value = 1;
+            });
+            
+            container.appendChild(newRow);
+        }
 
+        function removeRow(button) {
+            const container = document.getElementById('product-list');
+            if (container.getElementsByClassName('product-row').length > 1) {
+                button.closest('.product-row').remove();
+                reindexRows();
+            }
+        }
+
+        function reindexRows() {
+            const container = document.getElementById('product-list');
+            const rows = container.getElementsByClassName('product-row');
+            Array.from(rows).forEach((row, index) => {
+                row.querySelectorAll('select, input').forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name) input.setAttribute('name', name.replace(/\[\d+\]/, `[${index}]`));
+                    const id = input.getAttribute('id');
+                    if (id) input.setAttribute('id', id.replace(/\d+/, index));
+                });
+            });
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

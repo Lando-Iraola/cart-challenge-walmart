@@ -42,12 +42,14 @@ public class Brand {
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (!(o instanceof Brand brand))
+        if (!(o instanceof Brand))
+            return false; // Basic check
+        Brand brand = (Brand) o;
+
+        // Use getId() instead of .id to ensure Proxy initialization
+        if (this.getId() == null || brand.getId() == null)
             return false;
-        // Consistent with Product: compare by UUID
-        if (id == null || brand.id == null)
-            return false;
-        return Objects.equals(id, brand.id);
+        return Objects.equals(this.getId(), brand.getId());
     }
 
     @Override
