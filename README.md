@@ -21,7 +21,9 @@ Asi, poder implementar una variable que puede contener una de multiples cosas, c
 Lo anterior lo termine de implementar en el [siguiente commit](https://github.com/Lando-Iraola/cart-challenge-walmart/tree/f89a12997ac1e00e80646c948c1010d40354a3be)
 
 De ese punto en adelante empece a integrar SpringBoot MVC en el proyecto con demasiada ayuda de Gemini. 
-Añadido api rest __con panico__ tras olvidamr de ella, una vez mas, con Gemini.
+Añadido api rest __con panico__ tras olvidarme de ella, una vez mas, con Gemini.
+
+Las pruebas unitarias que se crearon para probar el prototipo en Java sin springboot resultaron vitales al momento de guiar al LLM para el traspaso a springboot  
 
 
 ## Dependencias
