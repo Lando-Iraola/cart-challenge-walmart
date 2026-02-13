@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.test_shop.cart.model.*;
 import com.test_shop.cart.model.rules.*;
 import com.test_shop.cart.repository.RuleRepository;
+import com.test_shop.cart.dto.CalculationResult;
 
 @ExtendWith(MockitoExtension.class)
 public class CartCalculationIntegrationTest {
@@ -31,6 +32,14 @@ public class CartCalculationIntegrationTest {
         calculationService = new CartCalculationService(ruleRepository);
     }
 
+    /**
+     * Helper to match the Service's expected String formatting (2 decimals)
+     * This prevents failures where "3570" != "3570.00"
+     */
+    private String format(BigDecimal value) {
+        return value.setScale(2, RoundingMode.HALF_UP).toPlainString();
+    }
+
     @Test
     void testCartDiscount() {
         Brand colun = new Brand("Colun");
@@ -43,13 +52,14 @@ public class CartCalculationIntegrationTest {
         when(ruleRepository.findAll()).thenReturn(List.of(promo));
 
         Cart cart = new Cart("0.19");
-        cart.addItem(leche, 3); // 2 pay 1 + 1 pay 1 = 3000 subtotal
+        cart.addItem(leche, 3); // 2 pay 1 + 1 pay 1 = 3000 base
 
-        BigDecimal subtotal = new BigDecimal("3000");
-        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal netTotal = new BigDecimal("3000");
+        BigDecimal totalEsperado = netTotal.multiply(new BigDecimal("1.19"));
         
-        String res = calculationService.calcularTotal(cart);
-        assertEquals(totalEsperado.toPlainString(), res);
+        CalculationResult res = calculationService.calcularTotal(cart);
+        assertEquals(format(totalEsperado), res.getFinalTotal());
+        assertEquals(1, res.getDetails().size());
     }
 
     @Test
@@ -68,11 +78,11 @@ public class CartCalculationIntegrationTest {
         cart.addItem(leche, 3); // 3000
         cart.addItem(manjar, 1); // 2000
 
-        BigDecimal subtotal = new BigDecimal("5000");
-        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal netTotal = new BigDecimal("5000");
+        BigDecimal totalEsperado = netTotal.multiply(new BigDecimal("1.19"));
 
-        String res = calculationService.calcularTotal(cart);
-        assertEquals(totalEsperado.toPlainString(), res);
+        CalculationResult res = calculationService.calcularTotal(cart);
+        assertEquals(format(totalEsperado), res.getFinalTotal());
     }
 
     @Test
@@ -92,11 +102,11 @@ public class CartCalculationIntegrationTest {
         cart.addItem(leche, 3);  // 3000
         cart.addItem(manjar, 2); // 2000
 
-        BigDecimal subtotal = new BigDecimal("5000");
-        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal netTotal = new BigDecimal("5000");
+        BigDecimal totalEsperado = netTotal.multiply(new BigDecimal("1.19"));
 
-        String res = calculationService.calcularTotal(cart);
-        assertEquals(totalEsperado.toPlainString(), res);
+        CalculationResult res = calculationService.calcularTotal(cart);
+        assertEquals(format(totalEsperado), res.getFinalTotal());
     }
 
     @Test
@@ -114,14 +124,14 @@ public class CartCalculationIntegrationTest {
         when(ruleRepository.findAll()).thenReturn(List.of(promoLeche, discountManjar));
 
         Cart cart = new Cart("0.19");
-        cart.addItem(leche, 3);
-        cart.addItem(manjar, 1);
+        cart.addItem(leche, 3); // 3000
+        cart.addItem(manjar, 1); // 2000 - 10% = 1800
 
-        BigDecimal subtotal = new BigDecimal("4800");
-        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal netTotal = new BigDecimal("4800");
+        BigDecimal totalEsperado = netTotal.multiply(new BigDecimal("1.19"));
 
-        String res = calculationService.calcularTotal(cart);
-        assertEquals(totalEsperado.toPlainString(), res);
+        CalculationResult res = calculationService.calcularTotal(cart);
+        assertEquals(format(totalEsperado), res.getFinalTotal());
     }
 
     @Test
@@ -140,13 +150,13 @@ public class CartCalculationIntegrationTest {
         when(ruleRepository.findAll()).thenReturn(List.of(betterRule, worseRule));
 
         Cart cart = new Cart("0.19");
-        cart.addItem(leche, 3);
+        cart.addItem(leche, 3); // Should pick betterRule (3000)
 
-        BigDecimal subtotal = new BigDecimal("3000");
-        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal netTotal = new BigDecimal("3000");
+        BigDecimal totalEsperado = netTotal.multiply(new BigDecimal("1.19"));
 
-        String res = calculationService.calcularTotal(cart);
-        assertEquals(totalEsperado.toPlainString(), res);
+        CalculationResult res = calculationService.calcularTotal(cart);
+        assertEquals(format(totalEsperado), res.getFinalTotal());
     }
 
     @Test
@@ -164,7 +174,7 @@ public class CartCalculationIntegrationTest {
         rule2.getTargetProducts().add(leche);
 
         PaymentProcessorRule rule3 = new PaymentProcessorRule(new BigDecimal("0.60"));
-        rule3.setWeight((byte) 40);
+        rule3.setWeight((byte) 40); // HEAVIEST RULE
         rule3.getTargetProcessors().add(masterplop);
 
         when(ruleRepository.findAll()).thenReturn(List.of(rule1, rule2, rule3));
@@ -173,11 +183,11 @@ public class CartCalculationIntegrationTest {
         cart.setPaymentProcessor(masterplop);
         cart.addItem(leche, 3); // 4500 * 0.4 multiplier = 1800
 
-        BigDecimal subtotal = new BigDecimal("1800");
-        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal netTotal = new BigDecimal("1800");
+        BigDecimal totalEsperado = netTotal.multiply(new BigDecimal("1.19"));
 
-        String res = calculationService.calcularTotal(cart);
-        assertEquals(totalEsperado.toPlainString(), res);
+        CalculationResult res = calculationService.calcularTotal(cart);
+        assertEquals(format(totalEsperado), res.getFinalTotal());
     }
 
     @Test
@@ -194,10 +204,8 @@ public class CartCalculationIntegrationTest {
         Cart cart = new Cart("0.19");
         cart.addItem(leche, 3);
 
-        BigDecimal totalEsperado = new BigDecimal("0").setScale(0, RoundingMode.HALF_UP);
-
-        String res = calculationService.calcularTotal(cart);
-        assertEquals(totalEsperado.toPlainString(), res);
+        CalculationResult res = calculationService.calcularTotal(cart);
+        assertEquals("0.00", res.getFinalTotal());
     }
 
     @Test
@@ -211,10 +219,10 @@ public class CartCalculationIntegrationTest {
         cart.addItem(leche, 3);
 
         BigDecimal subtotal = new BigDecimal("4500");
-        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19")).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal totalEsperado = subtotal.multiply(new BigDecimal("1.19"));
 
-        String res = calculationService.calcularTotal(cart);
-        assertEquals(totalEsperado.toPlainString(), res);
+        CalculationResult res = calculationService.calcularTotal(cart);
+        assertEquals(format(totalEsperado), res.getFinalTotal());
     }
 
     @Test
@@ -222,9 +230,8 @@ public class CartCalculationIntegrationTest {
         when(ruleRepository.findAll()).thenReturn(new ArrayList<>());
         Cart cart = new Cart("0.19");
 
-        BigDecimal totalEsperado = new BigDecimal("0").setScale(0, RoundingMode.HALF_UP);
-
-        String res = calculationService.calcularTotal(cart);
-        assertEquals(totalEsperado.toPlainString(), res);
+        CalculationResult res = calculationService.calcularTotal(cart);
+        assertEquals("0.00", res.getFinalTotal());
+        assertEquals(BigDecimal.ZERO.setScale(2), res.getSubtotal().setScale(2));
     }
 }

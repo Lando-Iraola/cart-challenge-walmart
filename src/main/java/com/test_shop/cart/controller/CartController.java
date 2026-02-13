@@ -1,20 +1,22 @@
 package com.test_shop.cart.controller;
 
+import com.test_shop.cart.dto.CalculationResult;
 import com.test_shop.cart.dto.CartRequest;
-import com.test_shop.cart.model.Product;
-import com.test_shop.cart.model.rules.RuleEntity;
 import com.test_shop.cart.model.Cart;
 import com.test_shop.cart.model.CartItem;
 import com.test_shop.cart.model.PaymentProcessor;
-import com.test_shop.cart.repository.ProductRepository;
+import com.test_shop.cart.model.Product;
 import com.test_shop.cart.repository.PaymentProcessorRepository;
-import com.test_shop.cart.repository.RuleRepository; // 1. ADDED IMPORT
+import com.test_shop.cart.repository.ProductRepository;
+import com.test_shop.cart.repository.RuleRepository;
 import com.test_shop.cart.service.CartCalculationService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Controller
@@ -24,9 +26,12 @@ public class CartController {
     private final ProductRepository productRepository;
     private final PaymentProcessorRepository processorRepository;
     private final CartCalculationService calculationService;
-    private final RuleRepository ruleRepository; // 2. ADDED FIELD
+    private final RuleRepository ruleRepository;
 
-    // 3. UPDATED CONSTRUCTOR TO INCLUDE RULE REPOSITORY
+    /**
+     * Constructor-based Dependency Injection.
+     * Spring Boot automatically plugs in the required beans.
+     */
     public CartController(ProductRepository productRepository,
                           PaymentProcessorRepository processorRepository,
                           CartCalculationService calculationService,
@@ -34,9 +39,12 @@ public class CartController {
         this.productRepository = productRepository;
         this.processorRepository = processorRepository;
         this.calculationService = calculationService;
-        this.ruleRepository = ruleRepository; // 4. ASSIGNED FIELD
+        this.ruleRepository = ruleRepository;
     }
 
+    /**
+     * Shows the initial empty simulator state.
+     */
     @GetMapping
     public String showCart(Model model) {
         model.addAttribute("cartRequest", new CartRequest());
@@ -45,35 +53,47 @@ public class CartController {
         return "cart-view";
     }
 
+    /**
+     * Processes the simulator form, runs the rule engine, and displays results.
+     */
     @PostMapping("/calculate")
     public String calculateTotal(@ModelAttribute CartRequest cartRequest, Model model) {
-        Product product = productRepository.findById(cartRequest.getProductId()).orElseThrow();
-        PaymentProcessor processor = processorRepository.findById(cartRequest.getProcessorId()).orElseThrow();
+        // 1. Retrieve the selected entities from Database
+        Product product = productRepository.findById(cartRequest.getProductId())
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        PaymentProcessor processor = processorRepository.findById(cartRequest.getProcessorId())
+                .orElseThrow(() -> new RuntimeException("Payment Processor not found"));
 
+        // 2. Build the temporary Cart object for the Service
         Cart tempCart = new Cart();
         tempCart.setPaymentProcessor(processor);
-        tempCart.setTaxRate("0.19");
+        tempCart.setTaxRate("0.19"); // Standard 19% tax rate
 
         CartItem item = new CartItem();
         item.setProduct(product);
         item.setQuantity(cartRequest.getQuantity());
         tempCart.setItems(List.of(item));
 
-        String finalPriceDisplay = calculationService.calcularTotal(tempCart);
+        // 3. Execute the Rule Engine logic via the Service
+        // This returns the detailed DTO instead of a simple String
+        CalculationResult result = calculationService.calcularTotal(tempCart);
 
-        // This line now has access to the ruleRepository field
-        List<RuleEntity> appliedRules = ruleRepository.findAllByOrderByWeightDesc().stream()
-                .filter(rule -> rule.isEligible(product, processor))
-                .toList();
-
+        // 4. Populate the Model for the View
+        // Repopulate dropdowns
         model.addAttribute("products", productRepository.findAll());
         model.addAttribute("processors", processorRepository.findAll());
+        
+        // Pass selections back for display
         model.addAttribute("selectedProduct", product);
         model.addAttribute("selectedProcessor", processor);
         model.addAttribute("selectedQuantity", cartRequest.getQuantity());
-        model.addAttribute("appliedRules", appliedRules);
+        
+        // Pass calculated details from the DTO
+        model.addAttribute("appliedRules", result.getDetails());
+        model.addAttribute("taxAmount", result.getTaxAmount());
+        model.addAttribute("subtotal", result.getSubtotal());
         model.addAttribute("taxRate", "19%");
-        model.addAttribute("finalPrice", finalPriceDisplay);
+        model.addAttribute("finalPrice", result.getFinalTotal());
 
         return "cart-view";
     }

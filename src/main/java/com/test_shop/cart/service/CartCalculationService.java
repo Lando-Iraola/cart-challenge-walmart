@@ -2,13 +2,17 @@ package com.test_shop.cart.service;
 
 import com.test_shop.cart.model.*;
 import com.test_shop.cart.model.rules.*;
+import com.test_shop.cart.dto.CalculationResult;
 import com.test_shop.cart.repository.RuleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Service
 public class CartCalculationService {
@@ -20,62 +24,66 @@ public class CartCalculationService {
     }
 
     @Transactional(readOnly = true)
-    public String calcularTotal(Cart cart) {
+    public CalculationResult calcularTotal(Cart cart) {
         List<RuleEntity> allRules = ruleRepository.findAll();
-        Money total = new Money(BigDecimal.ZERO, new BigDecimal(cart.getTaxRate()));
+        BigDecimal subtotal = BigDecimal.ZERO;
+        BigDecimal totalDiscounts = BigDecimal.ZERO;
+        List<CalculationResult.AppliedRuleDetail> ruleDetails = new ArrayList<>();
 
         for (CartItem item : cart.getItems()) {
-            List<RuleEntity> eligibleRules = allRules.stream()
-                    .filter(rule -> rule.isEligible(item.getProduct(), cart.getPaymentProcessor()))
-                    .collect(Collectors.toList());
+            BigDecimal itemPrice = item.getProduct().getPrice().getValue();
+            BigDecimal lineBase = itemPrice.multiply(new BigDecimal(item.getQuantity()));
+            subtotal = subtotal.add(lineBase);
 
-            double activeDiscountMultiplier = calculateItemDiscount(item, eligibleRules);
+            List<RuleEntity> eligible = allRules.stream()
+                .filter(rule -> rule.isEligible(item.getProduct(), cart.getPaymentProcessor()))
+                .collect(Collectors.toList());
 
-            // FIX: Wrap the String value in a new BigDecimal constructor
-            BigDecimal itemBasePrice = item.getProduct().getPrice().getValue();
-
-            BigDecimal lineTotal = itemBasePrice
-                    .multiply(new BigDecimal(item.getQuantity()))
-                    .multiply(BigDecimal.valueOf(activeDiscountMultiplier));
-
-            total.add(lineTotal.toPlainString());
+            
+            // 2. We now calculate WHICH rules contributed to that multiplier for the UI
+            // To be accurate to your behavior, we check if stacking was allowed
+            RuleEntity heavyRule = findHeavyRule(eligible);
+            
+            if (heavyRule != null) {
+                if (!heavyRule.isStackWithOtherRules()) {
+                    // Scenario A: Non-stackable "Winner" takes all
+                    BigDecimal discount = calculateSavings(lineBase, heavyRule, item.getQuantity());
+                    ruleDetails.add(new CalculationResult.AppliedRuleDetail(heavyRule.getDescription(), discount));
+                    totalDiscounts = totalDiscounts.add(discount);
+                } else {
+                    // Scenario B: Stacking logic
+                    for (RuleEntity rule : eligible) {
+                        if (rule.isStackWithOtherRules()) {
+                            BigDecimal discount = calculateSavings(lineBase, rule, item.getQuantity());
+                            ruleDetails.add(new CalculationResult.AppliedRuleDetail(rule.getDescription(), discount));
+                            totalDiscounts = totalDiscounts.add(discount);
+                        }
+                    }
+                }
+            }
         }
 
-        return total.getValueWithTax();
+        BigDecimal netTotal = subtotal.subtract(totalDiscounts).max(BigDecimal.ZERO);
+        BigDecimal taxAmount = netTotal.multiply(new BigDecimal(cart.getTaxRate()));
+        
+        return new CalculationResult(
+            netTotal.add(taxAmount).setScale(2, RoundingMode.HALF_UP).toPlainString(),
+            subtotal,
+            taxAmount,
+            ruleDetails
+        );
     }
 
-    private double calculateItemDiscount(CartItem item, List<RuleEntity> eligibleRules) {
-        if (eligibleRules.isEmpty())
-            return 1.0;
-
-        // 2. Identify the "Winner": Find the rule with the highest weight for THIS item
-        RuleEntity heavyRule = null;
-        for (RuleEntity rule : eligibleRules) {
-            heavyRule = (heavyRule == null) ? rule : heavyRule.moreImportantRule(rule);
+    private RuleEntity findHeavyRule(List<RuleEntity> rules) {
+        RuleEntity heavy = null;
+        for (RuleEntity r : rules) {
+            heavy = (heavy == null) ? r : heavy.moreImportantRule(r);
         }
+        return heavy;
+    }
 
-        double multiplier = 1.0;
-
-        for (RuleEntity rule : eligibleRules) {
-            // Calculate the specific effect (multiplier) of the current rule
-            double ruleEffect = rule.calculateDiscountFactor(item.getQuantity());
-
-            // 3. Supercession Logic:
-            // If the current rule OR the heavy rule does NOT allow stacking,
-            // we ignore the accumulation and return ONLY the heavy rule's effect.
-            if (!rule.isStackWithOtherRules() || !heavyRule.isStackWithOtherRules()) {
-                return heavyRule.calculateDiscountFactor(item.getQuantity());
-            }
-
-            // 4. Stacking Logic:
-            // (1.0 - ruleEffect) calculates the actual discount percentage (e.g., 1.0 - 0.9
-            // = 0.1)
-            // We subtract that from our current multiplier.
-            multiplier -= (1.0 - ruleEffect);
-        }
-
-        // 5. Floor Check: Ensures we handle "free items" without going into negative
-        // prices.
-        return Math.max(0.0, multiplier);
+    private BigDecimal calculateSavings(BigDecimal lineBase, RuleEntity rule, int qty) {
+        double factor = rule.calculateDiscountFactor(qty);
+        return lineBase.multiply(BigDecimal.valueOf(1.0 - factor));
     }
 }
