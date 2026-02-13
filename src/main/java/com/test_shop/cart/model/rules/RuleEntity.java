@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.test_shop.cart.model.Brand;
 import com.test_shop.cart.model.PaymentProcessor;
 import com.test_shop.cart.model.Product;
@@ -14,9 +16,16 @@ import jakarta.persistence.*;
 @Table(name = "reglas")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "rule_type", discriminatorType = DiscriminatorType.STRING)
-/* * Removed 'sealed' and 'permits' to resolve IncompatibleClassChangeError.
- * Hibernate 6 can now safely create proxies for this class.
- */
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, 
+    include = JsonTypeInfo.As.PROPERTY, 
+    property = "type"
+)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = PromoRule.class, name = "PROMO"),
+    @JsonSubTypes.Type(value = DiscountRule.class, name = "DISCOUNT"),
+    @JsonSubTypes.Type(value = PaymentProcessorRule.class, name = "PAYMENT")
+})
 public abstract class RuleEntity implements KnownRules {
     
     @Id

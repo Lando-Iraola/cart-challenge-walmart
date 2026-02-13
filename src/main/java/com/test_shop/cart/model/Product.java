@@ -2,6 +2,9 @@ package com.test_shop.cart.model;
 
 import jakarta.persistence.*;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.Objects;
 
 @Entity
@@ -25,6 +28,7 @@ public class Product {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // Add this line
     private Brand brand;
 
     // Inside Product.java
